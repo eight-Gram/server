@@ -6,7 +6,6 @@ const postSchema = mongoose.Schema({
     picture: String,
     descrition: String,
     likes: [{type: Schema.Types.ObjectId, ref: 'user'}],
-    dislikes: [{type: Schema.Types.ObjectId, ref: 'user'}],
     comments: [{type: Schema.Types.ObjectId, ref: 'comment'}]
 }, {
     timestamps: true

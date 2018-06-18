@@ -10,6 +10,7 @@ module.exports = {
         user.create( req.body )
         .then( function ( response ) {
             const token = jwt.sign({
+                id: response._id,
                 username: response.username,
                 firstname: response.firstname,
                 lastname: response.lastname
@@ -38,6 +39,7 @@ module.exports = {
                 })
             } else {
                 const token = jwt.sign({
+                    id: response._id,
                     username: response.username,
                     firstname: response.firstname,
                     lastname: response.lastname
@@ -54,4 +56,18 @@ module.exports = {
             })
         })
     },
+    getUser (req, res) {
+        user.find()
+        .then(function(userData) {
+            res.status(200).json({
+                message: 'Success get user data',
+                userData
+            })
+        })
+        .catch(function(err) {
+            res.status(500).json({
+                message: err.message
+            })
+        })
+    } 
 };

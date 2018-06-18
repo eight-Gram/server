@@ -1,5 +1,6 @@
 const post = require('../models/post_model')
 const comment = require('../models/comment_model')
+const jwt = require('jsonwebtoken')
 
 module.exports = {
     addPost (req, res) {
@@ -32,8 +33,12 @@ module.exports = {
             })
         })
     },
-    getAllPosts (req, res) {
-        post.find()
+    getPostsByUser (req, res) {
+        post.find({
+            userId: req.params.Id
+        })
+        .populate('user')
+        .populate('comment')
         .then(function(postData) {
             res.status(200).json({
                 message: 'success retrieve data',
@@ -75,5 +80,61 @@ module.exports = {
                 message: err.message
             })
         })
+    },
+    likePost (req, res) {
+        const token = req.headers.token
+        const postId = req.params.id
+
+        try {
+            const decoded = jwt.verify(token, process.env.SECRET)
+            post.updateOne({
+                _id: postId
+            }, {
+                $addToSet: { likes: decoded.id }
+            })
+            .then(function(response) {
+                res.status(200).json({
+                    message: 'Success like a post',
+                    response
+                })
+            })
+            .catch(function(err) {
+                res.status(500).json({
+                    message: err.message
+                })
+            })
+        } catch (err) {
+            res.status(500).json({
+                message: err.message
+            })
+        }
+    },
+    dislikePost (req, res) {
+        const token = req.headers.token
+        const postId = req.params.id
+
+        try {
+            const decoded = jwt.verify(token, process.env.SECRET)
+            post.updateOne({
+                _id: postId
+            }, {
+                $pull: { likes: decoded.id }
+            })
+            .then(function(response) {
+                res.status(200).json({
+                    message: 'Success dislike a post',
+                    response
+                })
+            })
+            .catch(function(err) {
+                res.status(500).json({
+                    message: err.message
+                })
+            })
+        } catch (err) {
+            res.status(500).json({
+                message: err.message
+            })
+        }
     }
 }
