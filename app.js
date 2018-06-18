@@ -8,17 +8,6 @@ const userRouter = require('./routers/user_routers')
 // const postRouter = require('./routers/post_router')
 const fs = require('fs')
 
-const { graphqlExpress, graphiqlExpress } = require('apollo-server-express')
-const { makeExecutableSchema } = require('graphql-tools')
-
-const userTypeDefs = fs.readFileSync('./graphql/user.gql', 'utf-8');
-const userResolver = require('./graphql/userResolver')
-
-const userSchema = makeExecutableSchema({
-    typeDefs: userTypeDefs,
-    resolvers: userResolver
-})
-
 mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@ds259820.mlab.com:59820/eight-gram`, () => {
     console.log('successfully connected to db')
 })
@@ -31,8 +20,6 @@ const PORT = process.env.PORT
 
 app.use('/user', userRouter);
 // app.use('/post', postRouter);
-app.use('/graphql', graphqlExpress({ schema: userSchema }))
-app.use('/graphiql', graphiqlExpress({ endpointURL: '/graphql' }))
 
 app.listen(PORT, () => {
     console.log(`connected to port ${PORT}`)
