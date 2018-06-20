@@ -27,31 +27,42 @@ module.exports = {
             })
         
         } catch (error) {
-                
+            res.status(500).json({
+                message: error
+            })
         }
     },
     deletePost (req, res) {
-        post.deleteOne({
-            _id: req.params.postId
-        })
-        .then(function(response) {
-            res.status(200).json({
-                message: 'Success delete post',
-                response
+        const token = req.headers.token
+        try {
+            const decoded = jwt.verify(token, process.env.SECRET)
+            post.deleteOne({
+                _id: req.params.postId,
+                userId: decoded.id
             })
-        })
-        .catch(function(err) {
+            .then(function(response) {
+                res.status(200).json({
+                    message: 'Success delete post',
+                    response
+                })
+            })
+            .catch(function(err) {
+                res.status(500).json({
+                    message: err.message
+                })
+            })
+        } catch (error) {
             res.status(500).json({
-                message: err.message
+                message: error
             })
-        })
+        }
     },
     getPostsByUser (req, res) {
         post.find({
             userId: req.params.userId
         })
-        .populate('user')
-        .populate('comment')
+        .populate('userId')
+        .populate('comments')
         .then(function(postData) {
             res.status(200).json({
                 message: 'success retrieve data',
@@ -65,33 +76,42 @@ module.exports = {
         })
     },
     addComment (req, res) {
-        comment.create({
-            username: req.body.username,
-            comment_text: req.body.commentText,
-            postId: req.params.postId
-        })
-        .then(function(response) {
-            post.updateOne({
-                _id: req.params.id
-            }, {
-                $push: {comment: response._id}
-            })
-            .then(function(responseUpdate) {
-                res.status(200).json({
-                    message: 'Success added comment',
-                    response
-                })
-            })
-            .catch(function(err) {
+        const token = req.headers.token
+        jwt.verify(token, process.env.SECRET, function(err, decoded) {
+            if (err) {
                 res.status(500).json({
-                    message: err.message
+                    message: err
                 })
-            })
-        })
-        .catch(function(err) {
-            res.status(500).json({
-                message: err.message
-            })
+            } else {
+                comment.create({
+                    username: decoded.username,
+                    comment_text: req.body.commentText,
+                    postId: req.params.postId
+                })
+                .then(function(response) {
+                    post.updateOne({
+                        _id: req.params.postId
+                    }, {
+                        $push: { comments: response._id }
+                    })
+                    .then(function(responseUpdate) {
+                        res.status(200).json({
+                            message: 'Success added comment',
+                            responseUpdate
+                        })
+                    })
+                    .catch(function(err) {
+                        res.status(500).json({
+                            message: err.message
+                        })
+                    })
+                })
+                .catch(function(err) {
+                    res.status(500).json({
+                        message: err.message
+                    })
+                })
+            }
         })
     },
     editDescription (req, res) {
@@ -101,7 +121,8 @@ module.exports = {
         try {
             const decoded = jwt.verify(token, process.env.SECRET)
             post.updateOne({
-                _id: postId
+                _id: postId,
+                userId: decoded.id
             }, {
                 description: req.body.description
             })
@@ -177,5 +198,21 @@ module.exports = {
                 message: err.message
             })
         }
+    },
+    getAllPosts (req, res) {
+        post.find()
+        .populate('userId')
+        .populate('comments')
+        .then(function(postData) {
+            res.status(200).json({
+                message: 'Success get post data',
+                postData
+            })
+        })
+        .catch(function(err) {
+            res.status(500).json({
+                message: err.message
+            })
+        })
     }
 }
